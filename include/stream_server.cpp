@@ -23,6 +23,17 @@ Stream_ser::Stream_ser(const char* port, int BACKLOG)
 			continue;
 		}
 
+		
+
+		int yes=1;
+		//char yes='1'; // Solaris people use this
+		
+		// lose the pesky "Address already in use" error message
+		if (setsockopt(m_fd ,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes) == -1) {
+		    perror("setsockopt");
+		    exit(1);
+		}
+	
 		m_status = bind(m_fd, m_p->ai_addr, m_p->ai_addrlen);
 		if(m_status == -1){
 			std::cout << "STREAM_SERVER::BIND()\n";
@@ -46,7 +57,7 @@ Stream_ser::Stream_ser(const char* port, int BACKLOG)
 }
 
 int Stream_ser::Send(struct connection conn, void* data, int length){
-	m_status = send(conn.fd, data, length, 0);
+	m_status = send(conn.fd, (const char*)data, length, 0);
 	if(m_status != length){
 		std::cout << "WARNING::STREAM_SERVER::SEND()\n";
 	}

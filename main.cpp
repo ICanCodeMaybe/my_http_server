@@ -18,7 +18,7 @@ struct connection conn;
 
 void handle_signals(int signum);
 
-int main(){
+int main(int argc, char** argv){
 	std::cout << "Hello there!\n";
 
 	struct sigaction sa;
