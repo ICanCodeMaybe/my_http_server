@@ -18,7 +18,15 @@ struct connection conn;
 
 void handle_signals(int signum);
 
+
+
 int main(int argc, char** argv){
+	CON_LOG("WAHT");
+	if(argc > 1){
+		CON_LOG("This program doesnt accepts command line arguments, sorry");
+		CON_LOG(argv[1]);
+	}
+
 	std::cout << "Hello there!\n";
 
 	struct sigaction sa;

@@ -6,7 +6,9 @@
 
 #include <cstring>
 #include <iostream>
+#include <ostream>
 #include <string.h>
+#include <vector>
 
 #include "handle_req.h"
 
@@ -14,15 +16,11 @@ Stream_ser* ch_server;
 struct connection* ch_conn;
 struct response ch_resp;
 
-int MAX_BUFFSIZE = 1024;
-char* buff;
-char* resp_buff; 
+std::string buff;
 
 void get_request();
 
 void child(Stream_ser* server, struct connection conn){
-	buff = new char[MAX_BUFFSIZE];
-
 	ch_server = server;
 	ch_conn = new connection;
 	*ch_conn = conn;
@@ -30,21 +28,32 @@ void child(Stream_ser* server, struct connection conn){
 	CON_LOG("HELLO");
 
 	while(1){
-		if(buff != nullptr){
-			memset(buff, 0, MAX_BUFFSIZE - 1);
-		}
-	
+		//clearing the buffer
+		buff.clear();
+		std::vector<char> resp_buff;
+
 		get_request();
-		CON_LOG(buff);
+		for(char ch : buff){
+			std::cout << ch;
+		}
 
-		ch_resp = parase(buff);
-		int resp_size;
-		CON_WARN_LOG("HEE");
-		resp_buff = get_response(ch_resp, &resp_size);
-		CON_LOG(resp_buff);
+		parase(buff, ch_resp);
+		CON_WARN_LOG("UGHHT");
+		get_response(resp_buff, ch_resp);
+		
+		CON_WARN_LOG("UHH");
+		for(char ch : resp_buff){
+			std::cout << ch;
+		}
+		
+		int resp_size = resp_buff.size();
 
-		int sent = ch_server->Send(*ch_conn, resp_buff, resp_size);
-		CON_LOG("Bytes sent: " << sent);
+		char* resp_send = new char[resp_size];
+		std::copy(resp_buff.begin(), resp_buff.end(), resp_send);
+		int sent = ch_server->Send(*ch_conn, resp_send, resp_size);
+		delete[] resp_send;
+
+		CON_LOG("Bytes sent: " << sent << "Response size: " << resp_size);
 
 	}
 
@@ -53,7 +62,17 @@ void child(Stream_ser* server, struct connection conn){
 }
 
 void get_request(){
-	int bytes_recv = ch_server->Recv(*ch_conn, buff, MAX_BUFFSIZE);
-	buff[bytes_recv] = '\0';
+	int MAX_BUF_SIZE = 1024;
+	char buffer[MAX_BUF_SIZE];
+	
+	int bytes_recv = ch_server->Recv(*ch_conn, buffer, MAX_BUF_SIZE);
+	buffer[bytes_recv] = '\0';
+
+	int i = 0;
+	while(i <= bytes_recv){
+		buff.push_back(buffer[i]);
+		i++;
+	}
 
 }
+

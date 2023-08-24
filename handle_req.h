@@ -1,22 +1,26 @@
 #ifndef PARASE_H
 #define PARASE_H
 
+#include <string>
+#include <vector>
+
 struct response{
 	//status line
-	const char* http_ver = "HTTP/1.1";
-	const char* status = "200";
-	const char* phrase = "OK";
+	std::string http_ver = "HTTP/1.1";
+	std::string status = "200";
+	std::string phrase = "OK";
 
 	//HTTP headers
-	const char* content_type = "text/html; charset=UTF-8";
+	std::string content_type = "text/html; charset=UTF-8";
 	int content_lenght = 0;
 	
 	//Body
-	char* data = nullptr;
+	std::vector<char> data;
 };
 
-struct response parase(char* request);
-char* get_response(struct response resp, int* size);
+
+void parase(std::string& request, struct response& resp);
+void get_response(std::vector<char>& response, struct response& resp);
 
 #endif
 

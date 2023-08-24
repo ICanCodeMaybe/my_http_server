@@ -2,6 +2,7 @@
 
 #include "log.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -18,35 +19,29 @@ std::string method;
 std::string path;
 std::string version;
 
-char* req_f_cont;
-char* req_finnal;
+std::string req_f_cont;
+std::string req_finnal;
 
-char* load_file(std::string path_to_file, int* size);
+void load_file(std::string path_to_file, struct response &resp);
 
 
 
-struct response meth_get();
-struct response meth_post();
-struct response meth_not_impl();
+void meth_get(struct response& resp);
+void meth_post(struct response& resp);
+void meth_not_impl(struct response& resp);
 
-struct response parase(char* request){
-	if(req_f_cont != nullptr){
-		delete req_f_cont;
-	}
-	if(req_finnal != nullptr){
-		delete req_finnal;
-	}
-	if(!lines.empty()){
-		lines.clear();
-	}
-	if(!request_vec.empty()){
-		request_vec.clear();
-	}
+void parase(std::string& request, struct response& resp){
 
-	std::string text = request;
-	delete request;
+	req_f_cont.clear();
+	
+	req_finnal.clear();
+		
+	lines.clear();
+	
+	request_vec.clear();
+
 	//spliting into lines
-	std::istringstream line_stream(text);
+	std::istringstream line_stream(request);
 	std::string line;
 
 	while(std::getline(line_stream, line)){
@@ -73,22 +68,20 @@ struct response parase(char* request){
 
 	CON_LOG(method << ", " << path << ", " << version);
 
-	struct response resp;
 	//depends on the method
 	if(method == "GET"){
-		resp = meth_get();
+		meth_get(resp);
 	}
 	else if(method == "POST"){
-		resp = meth_post();
+		meth_post(resp);
 	}
 	else{
-		resp = meth_not_impl();
+		meth_not_impl(resp);
 	}
 
-	return resp;
 }
 
-char* get_response(struct response resp, int* size){
+void get_response(std::vector<char>& response, struct response& resp){
 	std::stringstream ss;
 
 	//status line
@@ -96,75 +89,81 @@ char* get_response(struct response resp, int* size){
 
 	//headers
 	ss << "Content-Type:" << resp.content_type << "\r\n";
-	ss << "Content-Length: " << resp.content_lenght << "\r\n";
+	ss << "Content-Length: " << resp.content_lenght << "\r\n\r\n";
 
-	//body
-	ss << "\r\n" << resp.data << "\r\n";
-	std::string finnal = ss.str();
-	req_finnal = new char[finnal.size() + 1];
-	strcpy(req_finnal, finnal.c_str());
+	
+	std::string resp_head = ss.str();
 
-	*size = finnal.size() + 1;
+	response.clear();
+	response.resize(resp_head.size(), 0); // head size + body size
+	std::copy(resp_head.begin(), resp_head.end(), response.begin());
+	
+	//body	
+	response.insert(response.end(), resp.data.begin(), resp.data.end());
+	response.push_back('\r');
+	response.push_back('\n');
 
-	return req_finnal;
 }
 
-struct response meth_get(){
-	int data_size;
-	struct response mine_resp;
-	char* data = load_file(path, &data_size);
-	mine_resp.content_lenght = data_size;
-	mine_resp.data = data;
-
-	return mine_resp;
+void meth_get(struct response& mine_resp){
+	load_file(path, mine_resp);
 }
 
-struct response meth_post(){
-//TODO
+void meth_post(struct response& mine_resp){
+	//TODO
+	mine_resp.status = "404";
 }
 
-struct response meth_not_impl(){
-//TODO
+void meth_not_impl(struct response& mine_resp){
+	//TODO
+	mine_resp.status = "404";
 }
 
-char* load_file(std::string path, int* size){
+void load_file(std::string path, struct response &resp){
 //this is probably super unnecesary, will finish it when it is needed
-/*	char extension[8];
+	std::string extension;
 	int i = 0;
-	bool helper = false;
-	while(path[i]){
+	int helper = 0;
+	while(path[i]!='\0'){
 		if(path[i] == '.'){
 			helper = i;
 		}
 
 		if(helper != 0)
-			
+		{
+			extension += path[i];	
+		}	
 		i++;
 	}
-*/
+
+	if(extension ==".html"){
+		resp.content_type = " text/html; charset=UTF-8";
+	}
+	else if(extension == ".css"){
+		resp.content_type = " text/css";
+	}
+	else if(extension == ".jpg" || extension == ".jpeg"){
+		resp.content_type = " image/jpeg";
+	}
+
 	//this is just test, will make it more general
 	if(path == "/")
 		path = "source/test.html";
 	else
 		path = "source" + path;
 	
-	std::ifstream ifs(path);
-	std::stringstream ss;
-	std::string line;
+	std::ifstream ifs(path, std::ios::binary);
 	
 	if(!ifs.is_open()){
 		CON_ERROR_LOG("ERROR: OPENING OF FILE");
 	}
 
-	while(getline(ifs, line)){
-		ss << line << "\r\n";
+	char byte;
+	resp.data.clear();
+	while(ifs.read(reinterpret_cast<char*>(&byte), sizeof(byte))){
+		resp.data.push_back(byte);
 	}
 	ifs.close();
 
-	std::string content = ss.str();	
-	*size = content.length() + 1;
-	req_f_cont = new char[*size];
-	strcpy(req_f_cont, content.c_str());
-
-	return req_f_cont;
+	resp.content_lenght = resp.data.size();
 }
