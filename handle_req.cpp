@@ -3,6 +3,7 @@
 #include "log.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -19,6 +20,8 @@ std::string method;
 std::string path;
 std::string version;
 
+std::string body;
+
 std::string req_f_cont;
 std::string req_finnal;
 
@@ -31,7 +34,6 @@ void meth_post(struct response& resp);
 void meth_not_impl(struct response& resp);
 
 void parase(std::string& request, struct response& resp){
-
 	req_f_cont.clear();
 	
 	req_finnal.clear();
@@ -44,7 +46,7 @@ void parase(std::string& request, struct response& resp){
 	std::istringstream line_stream(request);
 	std::string line;
 
-	while(std::getline(line_stream, line)){
+	while(std::getline(line_stream >> std::ws, line)){
 		lines.push_back(line);
 	}
 
@@ -59,6 +61,15 @@ void parase(std::string& request, struct response& resp){
 		}
 
 		request_vec.push_back(words);
+
+	}
+
+	std::size_t separator = request.find("\r\n\r\n");
+	if(separator != std::string::npos){
+		body = request.substr(separator + 4);
+	}
+	else{
+		CON_ERROR_LOG("PARASE ERROR: body seperator wasnt found");
 	}
 
 	//getting method, path, version
@@ -110,8 +121,7 @@ void meth_get(struct response& mine_resp){
 }
 
 void meth_post(struct response& mine_resp){
-	//TODO
-	mine_resp.status = "404";
+	CON_WARN_LOG("HERE " << body);	
 }
 
 void meth_not_impl(struct response& mine_resp){
@@ -144,6 +154,12 @@ void load_file(std::string path, struct response &resp){
 	}
 	else if(extension == ".jpg" || extension == ".jpeg"){
 		resp.content_type = " image/jpeg";
+	}
+	else if (extension == ".js") {
+		resp.content_type = " text/javascript";
+	}
+	else if (extension == ".json"){
+		resp.content_type = " application/json";
 	}
 
 	//this is just test, will make it more general

@@ -1,0 +1,11 @@
+[
+	{
+		"name": "fake device",
+		"ip": "666.429.069",
+		"program": "red"
+	},
+	{
+		"name": "another",
+		"ip": "1111111"
+	}
+]

@@ -33,15 +33,16 @@ void child(Stream_ser* server, struct connection conn){
 		std::vector<char> resp_buff;
 
 		get_request();
+		CON_LOG("REQUEST - ");
 		for(char ch : buff){
 			std::cout << ch;
 		}
-
+		//parese the request
 		parase(buff, ch_resp);
-		CON_WARN_LOG("UGHHT");
+		
+		//generating the response
 		get_response(resp_buff, ch_resp);
 		
-		CON_WARN_LOG("UHH");
 		for(char ch : resp_buff){
 			std::cout << ch;
 		}
